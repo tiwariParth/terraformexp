@@ -75,47 +75,19 @@ node -v  # Should output v20.17.0
 npm -v   # Should output the corresponding npm version
 npm install -g appium
 appium driver install uiautomator2
+appium driver install xcuitest
+
 
 # Step 8: Install Selenium Grid and WebDrivers
-
-# Download Selenium standalone server
 wget https://github.com/SeleniumHQ/selenium/releases/download/selenium-4.12.0/selenium-server-4.12.0.jar
 sudo mkdir -p /opt/selenium
 sudo mv selenium-server-4.12.0.jar /opt/selenium/selenium-server.jar
 
-# Start Selenium Grid hub
-java -jar /opt/selenium/selenium-server.jar hub --port 4444 > /tmp/selenium_hub.log 2>&1 &
-
-# Wait for the Hub to fully initialize
-sleep 10
-
-# Start the first Selenium Node with Appium
-java -jar /opt/selenium/selenium-server.jar node \
-  --hub http://localhost:4444 \
-  --port 5555 \
-  --max-sessions 1 \
-  --detect-drivers false \
-  --override-max-sessions true > /tmp/selenium_node1.log 2>&1 &
-
-# Start the first Appium server on this node
-appium --port 4723 &
-
-# Wait for Node 1 to initialize
-sleep 5
-
-# Start the second Selenium Node with Appium
-java -jar /opt/selenium/selenium-server.jar node \
-  --hub http://localhost:4444 \
-  --port 5556 \
-  --max-sessions 5 \
-  --detect-drivers true \
-  --override-max-sessions true > /tmp/selenium_node2.log 2>&1 &
-
-# Start the second Appium server on this node
-appium --port 4725 &
-
-# Step 10: Verify Selenium Grid setup
-curl http://localhost:4444/status  # Should return the Grid status
+appium --config appium-servers/appium1.yml
+appium --config appium-servers/appium2.yml
+java -jar /opt/selenium/selenium-server.jar node --config nodeConfigs/node1.toml
+java -jar /opt/selenium/selenium-server.jar node --config nodeConfigs/node2.toml
+java -jar /opt/selenium/selenium-server.jar hub
 
 # Debugging: Output environment variables to file
 env >> /tmp/out.txt
