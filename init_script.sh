@@ -74,8 +74,7 @@ java -version  # Should show the installed version of Temurin JDK 17
 node -v  # Should output v20.17.0
 npm -v   # Should output the corresponding npm version
 npm install -g appium
-appium -p 4723 &  # Start Appium server on default port 4723
-sleep 5
+appium driver install uiautomator2
 
 # Step 8: Install Selenium Grid and WebDrivers
 
@@ -84,25 +83,44 @@ wget https://github.com/SeleniumHQ/selenium/releases/download/selenium-4.12.0/se
 sudo mkdir -p /opt/selenium
 sudo mv selenium-server-4.12.0.jar /opt/selenium/selenium-server.jar
 
-# Start Selenium Hub
-java -jar /opt/selenium/selenium-server.jar hub --port 4444 > /tmp/selenium-hub.log 2>&1 &
+# Start Selenium Grid hub
+java -jar /opt/selenium/selenium-server.jar hub --port 4444 > /tmp/selenium_hub.log 2>&1 &
+
+# Wait for the Hub to fully initialize
 sleep 10
 
-# Step 9: Configure Selenium Nodes with Appium
+# Start the first Selenium Node with Appium
+java -jar /opt/selenium/selenium-server.jar node \
+  --hub http://localhost:4444 \
+  --port 5555 \
+  --max-sessions 1 \
+  --detect-drivers false \
+  --override-max-sessions true > /tmp/selenium_node1.log 2>&1 &
 
-# Node 1 - Start Selenium Node with Appium server
-java -jar /opt/selenium/selenium-server.jar node --port 5555 --max-sessions 5 --hub http://localhost:4444 --browser "browserName=firefox,maxInstances=2" > /tmp/selenium-node1.log 2>&1 &
-appium -p 4725 &  # Appium server on different port for Node 1
-sleep 10
+# Start the first Appium server on this node
+appium --port 4723 &
 
-# Node 2 - Start Selenium Node with Appium server
-java -jar /opt/selenium/selenium-server.jar node --port 5556 --max-sessions 5 --hub http://localhost:4444 --browser "browserName=firefox,maxInstances=2" > /tmp/selenium-node2.log 2>&1 &
-appium -p 4726 &  # Appium server on different port for Node 2
-sleep 10
+# Wait for Node 1 to initialize
+sleep 5
+
+# Start the second Selenium Node with Appium
+java -jar /opt/selenium/selenium-server.jar node \
+  --hub http://localhost:4444 \
+  --port 5556 \
+  --max-sessions 5 \
+  --detect-drivers true \
+  --override-max-sessions true > /tmp/selenium_node2.log 2>&1 &
+
+# Start the second Appium server on this node
+appium --port 4725 &
 
 # Step 10: Verify Selenium Grid setup
 curl http://localhost:4444/status  # Should return the Grid status
-ps aux | grep selenium  # Check if the processes are running
-ps aux | grep appium  # Check if both Appium servers are running
 
-echo "Selenium Grid Hub and Nodes with Appium servers are running successfully."
+# Debugging: Output environment variables to file
+env >> /tmp/out.txt
+
+# Output the running Selenium processes to verify setup
+ps aux | grep selenium
+
+echo "Selenium Grid with two nodes and Appium servers is running on http://localhost:4444"
