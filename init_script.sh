@@ -92,6 +92,8 @@ sudo mv selenium-server-4.12.0.jar /opt/selenium/selenium-server.jar
 
 # Automatically generate the appium yml files in the instance using a loop
 mkdir -p ~/config/appium-servers
+mkdir -p ~/config/nodeConfigs
+
 for i in {1..2}; do
     port=$((4722 + i))
     cat <<EOF > ~/config/appium-servers/appium${i}.yml
@@ -105,11 +107,7 @@ server:
     mjpegServerPort: $((9100 + i))
     mjpegScreenshotUrl: "http://localhost:$((9100 + i))"
 EOF
-done
-
 # Generate node toml files with a loop
-mkdir -p ~/config/nodeConfigs
-for i in {1..2}; do
     cat <<EOF > ~/config/nodeConfigs/node${i}.toml
 [server]
 port = $((1110 + i))
@@ -124,10 +122,7 @@ configs = [
     "1", "{\"platformName\": \"Android\", \"appium:platformVersion\": \"31\", \"appium:deviceName\": \"Pixel_6_Android_12_${i}\", \"appium:automationName\": \"UiAutomator2\"}"
 ]
 EOF
-done
-
 # Step 10: Start Appium servers and Selenium Grid
-for i in {1..2}; do
     appium --config ~/config/appium-servers/appium${i}.yml &
     java -jar /opt/selenium/selenium-server.jar node --config ~/config/nodeConfigs/node${i}.toml &
 done
